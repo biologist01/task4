@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import React, { useState } from 'react';
 import Link from 'next/link';
 
@@ -43,7 +43,7 @@ const Header: React.FC = () => {
         </div>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex space-x-6">
+        <nav className="hidden md:flex space-x-6 items-center">
           <Link href="/" className="nav-link">
             Home
           </Link>
@@ -55,6 +55,18 @@ const Header: React.FC = () => {
           </Link>
           <Link href="/contact" className="nav-link">
             Contact
+          </Link>
+          <Link
+            href="/signup"
+            className="px-4 py-2 rounded-full bg-blue-600 text-white font-medium hover:bg-blue-700 transition duration-300"
+          >
+            Signup
+          </Link>
+          <Link
+            href="/cart"
+            className="px-4 py-2 rounded-full bg-gray-100 text-blue-600 border border-blue-600 font-medium hover:bg-blue-100 transition duration-300"
+          >
+            Cart
           </Link>
         </nav>
 
@@ -105,6 +117,24 @@ const Header: React.FC = () => {
                 Contact
               </Link>
             </li>
+            <li>
+              <Link
+                href="/signup"
+                className="block px-4 py-2 rounded-full bg-blue-600 text-white text-center font-medium hover:bg-blue-700 transition duration-300"
+                onClick={toggleMobileMenu}
+              >
+                Signup
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/cart"
+                className="block px-4 py-2 rounded-full bg-gray-100 text-blue-600 text-center border border-blue-600 font-medium hover:bg-blue-100 transition duration-300"
+                onClick={toggleMobileMenu}
+              >
+                Cart
+              </Link>
+            </li>
           </ul>
         </nav>
       )}
@@ -113,3 +143,4 @@ const Header: React.FC = () => {
 };
 
 export default Header;
+
