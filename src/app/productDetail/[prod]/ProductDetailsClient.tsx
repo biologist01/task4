@@ -32,7 +32,7 @@ const ProductDetailsClient = ({
       if (!existingCart.includes(id)) {
         existingCart.push(id);
         localStorage.setItem("cartItems", JSON.stringify(existingCart));
-        alert("Item added to cart!");
+        
       } else {
         alert("Item already in the cart.");
       }
