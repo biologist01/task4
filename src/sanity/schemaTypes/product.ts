@@ -7,7 +7,7 @@ export default {
         name: 'name',
         type: 'string',
         title: 'Name',
-        validation: (Rule: any) => Rule.required().error('Name is required'),
+        validation: (Rule: import('@sanity/types').Rule) => Rule.required().error('Name is required'),
       },
       {
         name: 'image',
@@ -22,20 +22,20 @@ export default {
         name: 'price',
         type: 'string',
         title: 'Price',
-        validation: (Rule: any) => Rule.required().error('Price is required'),
+        validation: (Rule: import('@sanity/types').Rule) => Rule.required().error('Price is required'),
       },
       {
         name: 'description',
         type: 'text',
         title: 'Description',
-        validation: (Rule: any) =>
+        validation: (Rule: import('@sanity/types').Rule) =>
           Rule.max(150).warning('Keep the description under 150 characters.'),
       },
       {
         name: 'discountPercentage',
         type: 'number',
         title: 'Discount Percentage',
-        validation: (Rule: any) =>
+        validation: (Rule: import('@sanity/types').Rule) =>
           Rule.min(0).max(100).warning('Discount must be between 0 and 100.'),
       },
       {
@@ -47,7 +47,7 @@ export default {
         name: 'stockLevel',
         type: 'number',
         title: 'Stock Level',
-        validation: (Rule: any) => Rule.min(0).error('Stock level must be a positive number.'),
+        validation: (Rule: import('@sanity/types').Rule) => Rule.min(0).error('Stock level must be a positive number.'),
       },
       {
         name: 'category',
@@ -59,7 +59,7 @@ export default {
             { title: 'Sofa', value: 'Sofa' },
           ],
         },
-        validation: (Rule: any) => Rule.required().error('Category is required'),
+        validation: (Rule: import('@sanity/types').Rule) => Rule.required().error('Category is required'),
       },
     ],
   };
