@@ -2,9 +2,16 @@
 
 import React from "react";
 import Image from "next/image";
-
+import Link from "next/link";
 type Product = {
   id: string;
+  name: string;
+  price: number;
+  description: string;
+  imageUrl: string;
+};
+type Product1 = {
+  _id: string;
   name: string;
   price: number;
   description: string;
@@ -16,7 +23,7 @@ const ProductDetailsClient = ({
   relatedProducts,
 }: {
   product: Product;
-  relatedProducts: Product[];
+  relatedProducts: Product1[];
 }) => {
   // Add to Cart function
   const addToCart = (id: string) => {
@@ -80,7 +87,7 @@ const ProductDetailsClient = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {relatedProducts.slice(0,8).map((relatedProduct) => (
             <div
-              key={relatedProduct.id}
+              key={relatedProduct._id}
               className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-transform transform hover:scale-105"
             >
               <div className="relative h-64">
@@ -102,12 +109,14 @@ const ProductDetailsClient = ({
                 <p className="text-[#151875] font-semibold mb-4">
                   ${relatedProduct.price}
                 </p>
+                <Link href={`/productDetail/${relatedProduct._id}`}>
                 <button
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300"
-                  onClick={() => addToCart(relatedProduct.id)}
+                  
                 >
-                  Add to Cart
+                  Show Product
                 </button>
+                </Link>
               </div>
             </div>
           ))}

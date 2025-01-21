@@ -1,5 +1,6 @@
 import React from 'react';
 import { client } from '@/sanity/lib/client';
+import Link from 'next/link';
 
 interface Product {
   _id: string;
@@ -42,17 +43,19 @@ const LandingPage = async () => {
         {products.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {products.map((product) => (
+              <Link href={`productDetail/${product._id}`}>
+
               <div
                 key={product._id}
                 className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300"
-              >
+                >
                 {/* Product Image */}
                 <div className="relative overflow-hidden rounded-t-lg">
                   <img
                     src={product.imageUrl}
                     alt={product.name}
                     className="w-full h-60 object-cover"
-                  />
+                    />
                   <span className="absolute top-2 left-2 bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded">
                     Featured
                   </span>
@@ -79,20 +82,21 @@ const LandingPage = async () => {
                   <p
                     className={`text-sm font-medium ${
                       product.stockLevel > 0 ? 'text-green-600' : 'text-red-600'
-                    }`}
-                  >
+                      }`}
+                      >
                     {product.stockLevel > 0 ? `In Stock (${product.stockLevel})` : 'Out of Stock'}
                   </p>
                 </div>
               </div>
+            </Link>
             ))}
           </div>
         ) : (
           <p className="text-center text-gray-600">No featured products available at the moment.</p>
         )}
-      </section>
-    </main>
-  );
+        </section>
+        </main>
+      );
 };
 
 export default LandingPage;
