@@ -1,53 +1,127 @@
-// import type { NextApiRequest, NextApiResponse } from "next";
-// import bcrypt from "bcryptjs";
-// import { client } from "@/sanity/lib/client";
-// // import { sanityClient } from "@/sanityClient";
-// const sanityClient = client
-// export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-//   const { email, password, name, mobileNumber, address } = req.body;
+"use client";
 
-//   if (req.method !== "POST") {
-//     return res.status(405).json({ message: "Method not allowed" });
-//   }
+import React, { useState } from "react";
+import { client } from "@/sanity/lib/client";
+import { useRouter } from "next/navigation";
 
-//   try {
-//     // 1. Check if user exists
-//     const existingUser = await sanityClient.fetch(`*[_type == "user" && email == $email][0]`, {
-//       email,
-//     });
+const SignUpPage = () => {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    mobileNumber: "",
+    street: "",
+    city: "",
+    state: "",
+    country: "",
+    postalCode: "",
+  });
 
-//     if (existingUser) {
-//       // 2. User exists - validate password
-//       const isValidPassword = await bcrypt.compare(password, existingUser.password);
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [showLoginButton, setShowLoginButton] = useState(false);
 
-//       if (!isValidPassword) {
-//         return res.status(401).json({ message: "Invalid credentials" });
-//       }
+  const router = useRouter();
 
-//       return res.status(200).json({ message: "Sign-in successful", user: existingUser });
-//     }
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
 
-//     // 3. User does not exist - create new user
-//     const hashedPassword = await bcrypt.hash(password, 10);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setMessage("");
+    setShowLoginButton(false);
 
-//     const newUser = {
-//       _type: "user",
-//       name,
-//       email,
-//       password: hashedPassword,
-//       mobileNumber,
-//       address,
-//       isVerified: false,
-//       role: "user",
-//       createdAt: new Date().toISOString(),
-//       updatedAt: new Date().toISOString(),
-//     };
+    const { name, email, password, mobileNumber, street, city, state, country, postalCode } =
+      formData;
 
-//     const result = await sanityClient.create(newUser);
+    try {
+      // Check if user already exists
+      const existingUser = await client.fetch(
+        `*[_type == "user" && email == $email][0]`,
+        { email }
+      );
 
-//     return res.status(201).json({ message: "User created successfully", user: result });
-//   } catch (error) {
-//     console.error("Error handling sign-in/sign-up:", error);
-//     return res.status(500).json({ message: "Internal Server Error" });
-//   }
-// }
+      if (existingUser) {
+        setMessage("Email is already registered. Please log in.");
+        setShowLoginButton(true);
+        setIsLoading(false);
+        return;
+      }
+
+      // Hash the password (simulate it here; use server hashing in production)
+      const hashedPassword = btoa(password); // Use bcrypt on the server in real use cases
+
+      // Create the user
+      const newUser = {
+        _type: "user",
+        name,
+        email,
+        password: hashedPassword,
+        mobileNumber,
+        address: {
+          street,
+          city,
+          state,
+          country,
+          postalCode,
+        },
+        isVerified: false,
+        role: "user",
+      };
+
+      await client.create(newUser);
+      setMessage("User signed up successfully!");
+    } catch (error) {
+      console.error("Error creating user:", error);
+      setMessage("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 text-black">
+      <div className="bg-white shadow-lg rounded-lg p-8 max-w-md w-full">
+        <h2 className="text-2xl font-bold text-center mb-6">Sign Up</h2>
+        <form onSubmit={handleSubmit}>
+          {(Object.keys(formData) as Array<keyof typeof formData>).map((field) => (
+            <input
+              key={field}
+              type={field === "password" ? "password" : "text"}
+              name={field}
+              placeholder={field[0].toUpperCase() + field.slice(1).replace(/([A-Z])/g, " $1")}
+              value={formData[field]}
+              onChange={handleChange}
+              className="w-full p-3 mb-4 border rounded"
+              required
+            />
+          ))}
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700 transition"
+            disabled={isLoading}
+          >
+            {isLoading ? "Signing Up..." : "Sign Up"}
+          </button>
+        </form>
+        {message && <p className="text-center text-red-500 mt-4">{message}</p>}
+        {showLoginButton && (
+          <button
+            onClick={() => router.push("/login")} // Update the route to your login page
+            className="w-full bg-green-600 text-white py-3 rounded mt-4 hover:bg-green-700 transition"
+          >
+            Go to Login
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default SignUpPage;

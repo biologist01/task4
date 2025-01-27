@@ -44,7 +44,7 @@ const ProductDetailsClient = ({
   return (
     <div>
       {/* Header Section */}
-      <header className="text-center flex justify-center items-center bg-gradient-to-r from-[#F6F5FF] to-[#EAE8FF] mb-12 h-32 sm:h-[286px]">
+      <header className="text-center flex justify-center items-center bg-gradient-to-r from-[#8b8bfc] to-[#EAE8FF]  mb-12 h-32 sm:h-[286px]">
         <h1 className="text-3xl sm:text-4xl font-bold text-blue-600">Product Details</h1>
       </header>
 
