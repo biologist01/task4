@@ -1,10 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { client } from "@/sanity/lib/client";
 import { useRouter } from "next/navigation";
 
+interface UserData {
+  name: string;
+  email: string;
+  mobileNumber: string;
+  address: {
+    street: string;
+    city: string;
+    state: string;
+    country: string;
+    postalCode: string;
+  };
+}
+
 const LoginPage = () => {
+  // Form state for login credentials
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -13,8 +27,20 @@ const LoginPage = () => {
   const [message, setMessage] = useState("");
   const [showSignupButton, setShowSignupButton] = useState(false);
 
+  // State for saved user data (if any)
+  const [savedUser, setSavedUser] = useState<UserData | null>(null);
+
   const router = useRouter();
 
+  // Check if user data is already in local storage
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setSavedUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  // Handle input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prevData) => ({
@@ -23,6 +49,7 @@ const LoginPage = () => {
     }));
   };
 
+  // Handle login form submission
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -44,14 +71,28 @@ const LoginPage = () => {
         return;
       }
 
-      // Compare the entered password with the stored password
-      const isPasswordValid = atob(user.password) === password; // Replace with bcrypt comparison in production
+      // Compare the entered password with the stored (hashed) password
+      // (In production, use bcrypt or another secure comparison)
+      const isPasswordValid = atob(user.password) === password;
 
       if (!isPasswordValid) {
         setMessage("Invalid password. Please try again.");
       } else {
         setMessage("Login successful!");
-        // Navigate to another page or perform further actions here
+
+        // Prepare non-sensitive user data
+        const userData: UserData = {
+          name: user.name,
+          email: user.email,
+          mobileNumber: user.mobileNumber,
+          address: user.address,
+        };
+
+        // Save user data to local storage (do not store password)
+        localStorage.setItem("user", JSON.stringify(userData));
+
+        // Redirect to the home page after successful login
+        router.push("/");
       }
     } catch (error) {
       console.error("Error logging in:", error);
@@ -61,8 +102,35 @@ const LoginPage = () => {
     }
   };
 
+  // If user data is already saved, show their details instead of the login form
+  if (savedUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="bg-white shadow-lg rounded-lg p-8 max-w-md w-full">
+          <h2 className="text-2xl font-bold text-center mb-6">You&rsquo;re Logged In!</h2>
+          <p className="mb-2"><strong>Name:</strong> {savedUser.name}</p>
+          <p className="mb-2"><strong>Email:</strong> {savedUser.email}</p>
+          <p className="mb-2"><strong>Mobile Number:</strong> {savedUser.mobileNumber}</p>
+          <div className="mb-2">
+            <strong>Address:</strong>
+            <p>{savedUser.address.street}</p>
+            <p>{savedUser.address.city}, {savedUser.address.state}</p>
+            <p>{savedUser.address.country} - {savedUser.address.postalCode}</p>
+          </div>
+          <button
+            onClick={() => router.push("/")}
+            className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700 transition"
+          >
+            Go to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Otherwise, render the login form
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 text-black">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white shadow-lg rounded-lg p-8 max-w-md w-full">
         <h2 className="text-2xl font-bold text-center mb-6">Login</h2>
         <form onSubmit={handleLogin}>
@@ -95,7 +163,7 @@ const LoginPage = () => {
         {message && <p className="text-center text-red-500 mt-4">{message}</p>}
         {showSignupButton && (
           <button
-            onClick={() => router.push("/signup")} // Update the route to your signup page
+            onClick={() => router.push("/signup")}
             className="w-full bg-green-600 text-white py-3 rounded mt-4 hover:bg-green-700 transition"
           >
             Go to Sign Up

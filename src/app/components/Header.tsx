@@ -11,7 +11,7 @@ const Header: React.FC = () => {
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
-      <div className="container mx-auto px-4 lg:px-8 flex items-center justify-between py-4">
+      <div className="container mx-auto px-4 lg:px-8 flex items-center justify-between py-4 text-gray-600">
         {/* Logo */}
         <div className="text-2xl font-bold text-blue-600">
           <Link href="/">E-Shop</Link>
