@@ -29,11 +29,38 @@ const CheckoutPage = () => {
   const [isFormValid, setIsFormValid] = useState<boolean>(false);
   const router = useRouter();
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  // Pre-fill form data from local storage on component mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          setFormData({
+            fullName: parsedUser.name || "",
+            email: parsedUser.email || "",
+            phone: parsedUser.mobileNumber || "",
+            address: parsedUser.address?.street || "",
+            city: parsedUser.address?.city || "",
+            postalCode: parsedUser.address?.postalCode || "",
+            country: parsedUser.address?.country || "",
+            paymentMethod: "creditCard",
+          });
+        } catch (error) {
+          console.error("Error parsing user data:", error);
+        }
+      }
+    }
+  }, []);
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
+  // Validate the form whenever the formData changes
   useEffect(() => {
     const isValid =
       formData.fullName.trim() !== "" &&
@@ -43,7 +70,6 @@ const CheckoutPage = () => {
       formData.city.trim() !== "" &&
       formData.postalCode.trim() !== "" &&
       formData.country.trim() !== "";
-
     setIsFormValid(isValid);
   }, [formData]);
 
@@ -62,11 +88,16 @@ const CheckoutPage = () => {
     <>
       <div className="min-h-screen bg-gradient-to-r from-blue-100 to-blue-400 py-12 px-6 lg:px-12">
         <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-8 lg:p-12">
-          <h1 className="text-3xl font-bold text-center text-[#1D3178] mb-8">Billing Information</h1>
+          <h1 className="text-3xl font-bold text-center text-[#1D3178] mb-8">
+            Billing Information
+          </h1>
 
-          <form onSubmit={handleSubmit} className=" text-black space-y-8">
+          <form onSubmit={handleSubmit} className="space-y-8">
             <div className="space-y-4">
-              <label htmlFor="fullName" className="block text-sm font-semibold text-gray-700">
+              <label
+                htmlFor="fullName"
+                className="block text-sm font-semibold text-gray-700"
+              >
                 Full Name
               </label>
               <input
@@ -84,7 +115,10 @@ const CheckoutPage = () => {
             </div>
 
             <div className="space-y-4">
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700">
+              <label
+                htmlFor="email"
+                className="block text-sm font-semibold text-gray-700"
+              >
                 Email
               </label>
               <input
@@ -100,7 +134,10 @@ const CheckoutPage = () => {
             </div>
 
             <div className="space-y-4">
-              <label htmlFor="phone" className="block text-sm font-semibold text-gray-700">
+              <label
+                htmlFor="phone"
+                className="block text-sm font-semibold text-gray-700"
+              >
                 Phone
               </label>
               <input
@@ -118,7 +155,10 @@ const CheckoutPage = () => {
             </div>
 
             <div className="space-y-4">
-              <label htmlFor="address" className="block text-sm font-semibold text-gray-700">
+              <label
+                htmlFor="address"
+                className="block text-sm font-semibold text-gray-700"
+              >
                 Address
               </label>
               <input
@@ -136,7 +176,10 @@ const CheckoutPage = () => {
             </div>
 
             <div className="space-y-4">
-              <label htmlFor="city" className="block text-sm font-semibold text-gray-700">
+              <label
+                htmlFor="city"
+                className="block text-sm font-semibold text-gray-700"
+              >
                 City
               </label>
               <input
@@ -153,7 +196,10 @@ const CheckoutPage = () => {
             </div>
 
             <div className="space-y-4">
-              <label htmlFor="postalCode" className="block text-sm font-semibold text-gray-700">
+              <label
+                htmlFor="postalCode"
+                className="block text-sm font-semibold text-gray-700"
+              >
                 Postal Code
               </label>
               <input
@@ -169,7 +215,10 @@ const CheckoutPage = () => {
             </div>
 
             <div className="space-y-4">
-              <label htmlFor="country" className="block text-sm font-semibold text-gray-700">
+              <label
+                htmlFor="country"
+                className="block text-sm font-semibold text-gray-700"
+              >
                 Country
               </label>
               <input
@@ -185,7 +234,10 @@ const CheckoutPage = () => {
             </div>
 
             <div className="space-y-4">
-              <label htmlFor="paymentMethod" className="block text-sm font-semibold text-gray-700">
+              <label
+                htmlFor="paymentMethod"
+                className="block text-sm font-semibold text-gray-700"
+              >
                 Payment Method
               </label>
               <select
@@ -206,7 +258,9 @@ const CheckoutPage = () => {
               type="submit"
               disabled={!isFormValid}
               className={`w-full py-3 text-white rounded-md font-semibold transition duration-300 ${
-                isFormValid ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-400 cursor-not-allowed"
+                isFormValid
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "bg-gray-400 cursor-not-allowed"
               }`}
             >
               Place Order

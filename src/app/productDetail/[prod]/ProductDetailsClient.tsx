@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+
 type Product = {
   id: string;
   name: string;
@@ -25,26 +26,82 @@ const ProductDetailsClient = ({
   product: Product;
   relatedProducts: Product1[];
 }) => {
-  // Add to Cart function
+  const [showSignInModal, setShowSignInModal] = useState(false);
+  const [showCartPopup, setShowCartPopup] = useState(false);
+  const [cartPopupMessage, setCartPopupMessage] = useState("");
+
+  // Add to Cart function with beautiful popup feedback
   const addToCart = (id: string) => {
+    // Check if user is signed in by verifying if "user" exists in local storage.
+    const user = localStorage.getItem("user");
+    if (!user) {
+      // If no user is found, show the sign in modal.
+      setShowSignInModal(true);
+      return;
+    }
+
     try {
       const existingCart = JSON.parse(localStorage.getItem("cartItems") || "[]");
       if (!existingCart.includes(id)) {
         existingCart.push(id);
         localStorage.setItem("cartItems", JSON.stringify(existingCart));
-        
+        setCartPopupMessage("Item added to cart!");
       } else {
-        alert("Item already in the cart.");
+        setCartPopupMessage("Item already in the cart.");
       }
+      setShowCartPopup(true);
     } catch (error) {
       console.error("Failed to add item to cart:", error);
+      setCartPopupMessage("An error occurred. Please try again.");
+      setShowCartPopup(true);
     }
   };
 
   return (
     <div>
+      {/* Sign-In Popup Modal */}
+      {showSignInModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-60 z-50">
+          <div className="relative bg-gradient-to-br from-purple-400 to-blue-500 p-8 rounded-xl shadow-2xl text-center max-w-sm mx-4">
+            <h2 className="text-2xl font-bold text-white mb-4">Sign In Required</h2>
+            <p className="text-white mb-6">
+              Please{" "}
+              <Link href="/signup">
+                <span className="font-semibold text-yellow-300 hover:text-yellow-400 transition-colors cursor-pointer underline">
+                  Sign Up
+                </span>
+              </Link>{" "}
+              first.
+            </p>
+            <button
+              onClick={() => setShowSignInModal(false)}
+              className="mt-4 px-6 py-2 bg-white text-blue-600 font-semibold rounded-full shadow-md hover:bg-gray-100 transition-transform transform hover:scale-105"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Cart Popup Modal */}
+      {showCartPopup && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
+          <div className="bg-blue-700 p-6 rounded-xl shadow-2xl text-center max-w-xs mx-4 transform transition-all hover:scale-105">
+            <p className="text-white text-lg font-semibold mb-4">
+              {cartPopupMessage}
+            </p>
+            <button
+              onClick={() => setShowCartPopup(false)}
+              className="mt-2 px-4 py-2 bg-white text-blue-500 font-semibold rounded-full shadow-md hover:bg-gray-100 transition-transform transform hover:scale-110"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header Section */}
-      <header className="text-center flex justify-center items-center bg-gradient-to-r from-[#8b8bfc] to-[#EAE8FF]  mb-12 h-32 sm:h-[286px]">
+      <header className="text-center flex justify-center items-center bg-gradient-to-r from-[#F6F5FF] to-[#EAE8FF] mb-12 h-32 sm:h-[286px]">
         <h1 className="text-3xl sm:text-4xl font-bold text-blue-600">Product Details</h1>
       </header>
 
@@ -71,7 +128,7 @@ const ProductDetailsClient = ({
             Price: ${product.price}
           </p>
           <button
-            className="px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white text-sm sm:text-lg rounded-lg hover:bg-blue700 transition duration-300"
+            className="px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white text-sm sm:text-lg rounded-lg hover:bg-blue-700 transition duration-300"
             onClick={() => addToCart(product.id)}
           >
             Add to Cart
@@ -85,7 +142,7 @@ const ProductDetailsClient = ({
           You May Like
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {relatedProducts.slice(0,8).map((relatedProduct) => (
+          {relatedProducts.slice(0, 8).map((relatedProduct) => (
             <div
               key={relatedProduct._id}
               className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-transform transform hover:scale-105"
@@ -109,13 +166,10 @@ const ProductDetailsClient = ({
                 <p className="text-[#151875] font-semibold mb-4">
                   ${relatedProduct.price}
                 </p>
-                <Link href={`/productDetail/${relatedProduct._id}`}>
-                <button
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300"
-                  
-                >
-                  Show Product
-                </button>
+                <Link href={`/product/${relatedProduct._id}`}>
+                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300">
+                    Show Product
+                  </button>
                 </Link>
               </div>
             </div>
