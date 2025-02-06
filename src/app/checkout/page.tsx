@@ -2,6 +2,9 @@
 
 import { useRouter } from "next/navigation"; // Use this for navigation
 import React, { useState, useEffect } from "react";
+// import {Elements} from "@stripe/react-stripe-js" 
+// import {loadStripe} from "@stripe/stripe-js" 
+
 
 interface FormData {
   fullName: string;
@@ -71,7 +74,7 @@ const CheckoutPage = () => {
       formData.postalCode.trim() !== "" &&
       formData.country.trim() !== "";
     setIsFormValid(isValid);
-  }, [formData]);
+  }, [formData]); 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,8 +85,7 @@ const CheckoutPage = () => {
     } else {
       alert("Please fill in all the required fields correctly.");
     }
-  };
-
+  }; 
   return (
     <>
       <div className="min-h-screen bg-gradient-to-r from-blue-100 to-blue-400 py-12 px-6 lg:px-12">
