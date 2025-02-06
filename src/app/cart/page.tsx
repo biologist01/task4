@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { client } from "@/sanity/lib/client";
 
 interface CartItem {
@@ -26,6 +26,7 @@ const truncateDescription = (description: string, wordLimit: number): string => 
 const Cart = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [showEmptyModal, setShowEmptyModal] = useState(false);
+  const router = useRouter();
 
   // Fetch cart items from local storage and server
   useEffect(() => {
@@ -112,6 +113,13 @@ const Cart = () => {
     setShowEmptyModal(true);
   };
 
+  // Handler for proceeding to checkout
+  const handleProceedToCheckout = () => {
+    const total = calculateTotal();
+    localStorage.setItem("totalAmount", total.toFixed(2));
+    router.push("/checkout");
+  };
+
   return (
     <>
       {/* Empty Cart Popup */}
@@ -124,11 +132,11 @@ const Cart = () => {
             <p className="text-white mb-6">
               Please add at least one item to your cart.
             </p>
-            <Link href="/products">
+            <a href="/shop">
               <button className="mt-4 px-6 py-3 bg-white text-purple-600 font-semibold rounded-full shadow-md hover:bg-gray-100 transition-all transform hover:scale-110">
                 Continue Shopping
               </button>
-            </Link>
+            </a>
           </div>
         </div>
       )}
@@ -221,14 +229,13 @@ const Cart = () => {
               <span>Total:</span>
               <span>${calculateTotal().toFixed(2)}</span>
             </p>
-            <Link href="/checkout">
-              <button
-                type="submit"
-                className="w-full mt-6 py-3 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700 transition duration-300"
-              >
-                Proceed To Checkout
-              </button>
-            </Link>
+            <button
+              onClick={handleProceedToCheckout}
+              type="button"
+              className="w-full mt-6 py-3 bg-blue-600 text-white rounded-md font-semibold hover:bg-blue-700 transition duration-300"
+            >
+              Proceed To Checkout
+            </button>
           </div>
         )}
       </div>
