@@ -13,7 +13,7 @@ type Prod = {
   stockLevel: number;
 };
 
-export default async function Page({ params }: { params: { productDetails: string } }) {
+export default async function Page({ params }: { params: { prod: string } }) {
   // Fetch product data on the server with no caching.
   const query = await client.fetch(
     `*[_type == "product"]{
@@ -30,7 +30,7 @@ export default async function Page({ params }: { params: { productDetails: strin
     { cache: 'no-store' }  // Force a fresh fetch on every request
   );
   
-  const product = query.find((item: Prod) => item._id == params.productDetails);
+  const product = query.find((item: Prod) => item._id == params.prod);
 
   if (!product) {
     return <div>Product not found.</div>;
