@@ -154,7 +154,7 @@ const Cart = () => {
             <p className="text-white mb-6">
               Please add at least one item to your cart.
             </p>
-            <a href="/shop">
+            <a href="/products">
               <button className="mt-4 px-6 py-3 bg-white text-purple-600 font-semibold rounded-full shadow-md hover:bg-gray-100 transition-all transform hover:scale-110">
                 Continue Shopping
               </button>
