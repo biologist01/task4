@@ -9,9 +9,9 @@ const Footer: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Column 1: About */}
           <div>
-            <h4 className="text-xl font-bold text-blue-600 mb-4">About E-Shop</h4>
+            <h4 className="text-xl font-bold text-blue-600 mb-4"> Styling.com</h4>
             <p className="text-gray-600 text-sm md:text-base leading-relaxed">
-              E-Shop is your trusted online store for high-quality products at unbeatable prices. Shop with confidence and enjoy a seamless shopping experience.
+   Styling.com is your trusted online store for high-quality products at unbeatable prices. Shop with confidence and enjoy a seamless shopping experience.
             </p>
           </div>
 
@@ -67,7 +67,7 @@ const Footer: React.FC = () => {
         {/* Footer Bottom */}
         <div className="mt-6 border-t border-gray-300 pt-4 text-center">
           <p className="text-gray-600 text-sm md:text-base">
-            &copy; {new Date().getFullYear()} E-Shop. All rights reserved.
+            &copy; {new Date().getFullYear()} Styling.com. All rights reserved.
           </p>
         </div>
       </div>

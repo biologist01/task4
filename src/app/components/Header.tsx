@@ -14,7 +14,7 @@ const Header: React.FC = () => {
       <div className="container mx-auto px-4 lg:px-8 flex items-center justify-between py-4 text-gray-600">
         {/* Logo */}
         <div className="text-2xl font-bold text-blue-600">
-          <Link href="/">E-Shop</Link>
+          <Link href="/">Styling.com</Link>
         </div>
 
         {/* Search Bar */}
