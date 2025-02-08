@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { client } from "@/sanity/lib/client";
 
 interface CartItem {
-  _id: number;
+  _id: string;
   name: string;
   price: string;
   description: string;
@@ -14,7 +14,6 @@ interface CartItem {
   stockLevel: number; // Available stock level
 }
 
-// Utility function to truncate description
 const truncateDescription = (description: string, wordLimit: number): string => {
   const words = description.split(" ");
   if (words.length > wordLimit) {
@@ -28,21 +27,21 @@ const Cart = () => {
   const [showEmptyModal, setShowEmptyModal] = useState(false);
   const router = useRouter();
 
-  // Fetch cart items from local storage and server
+  // Fetch cart items from localStorage and Sanity.
   useEffect(() => {
     const fetchCartItems = async () => {
       try {
-        const storedIds: number[] = JSON.parse(
-          localStorage.getItem("cartItems") || "[]"
-        );
-
-        if (storedIds.length === 0) {
+        // Expect localStorage to have an array of objects: [{ _id: string, quantity: number }, ...]
+        const storedCart = JSON.parse(localStorage.getItem("cartItems") || "[]");
+        if (storedCart.length === 0) {
           setCartItems([]);
           setShowEmptyModal(true);
           return;
         }
+        // Extract the product IDs from storedCart.
+        const storedIds = storedCart.map((item: { _id: string; quantity: number }) => item._id);
 
-        // Fetch stockLevel along with other product data.
+        // Fetch products from Sanity.
         const products: CartItem[] = await client.fetch(`*[_type == "product"]{
           _id,
           name,
@@ -50,13 +49,34 @@ const Cart = () => {
           "imageUrl": image.asset->url,
           description,
           stockLevel
-        }`);
+        }`,
+        {},
+        { cache: 'no-store' } 
+      );
 
+        // Filter products: only include those that are in the storedCart and have stockLevel > 0.
         const filteredItems = products
-          .filter((product) => storedIds.includes(product._id))
-          .map((product) => ({ ...product, quantity: 1 }));
+          .filter((product) => storedIds.includes(product._id) && product.stockLevel > 0)
+          .map((product) => {
+            const cartItem = storedCart.find((item: { _id: string; quantity: number }) => item._id === product._id);
+            return { ...product, quantity: cartItem?.quantity || 1 };
+          });
 
-        setCartItems(filteredItems);
+        // Update localStorage: remove any items that are now out of stock.
+        const updatedStoredCart = storedCart.filter((item: { _id: string; quantity: number }) => {
+          const prod = products.find((p) => p._id === item._id);
+          return prod && prod.stockLevel > 0;
+        });
+        localStorage.setItem("cartItems", JSON.stringify(updatedStoredCart));
+
+        // If there are no items left after filtering, show the empty modal.
+        if (updatedStoredCart.length === 0) {
+          setCartItems([]);
+          setShowEmptyModal(true);
+        } else {
+          setCartItems(filteredItems);
+          setShowEmptyModal(false);
+        }
       } catch (error) {
         console.error("Failed to fetch cart items:", error);
       }
@@ -65,8 +85,7 @@ const Cart = () => {
     fetchCartItems();
   }, []);
 
-  // Update quantity ensuring it does not exceed the stockLevel
-  const updateQuantity = (_id: number, newQuantity: number) => {
+  const updateQuantity = (_id: string, newQuantity: number) => {
     setCartItems((prevItems) =>
       prevItems.map((item) => {
         if (item._id === _id) {
@@ -81,21 +100,23 @@ const Cart = () => {
         return item;
       })
     );
+    // Also update localStorage accordingly.
+    const storedCart = JSON.parse(localStorage.getItem("cartItems") || "[]");
+    const updatedCart = storedCart.map((item: { _id: string; quantity: number }) =>
+      item._id === _id ? { ...item, quantity: newQuantity } : item
+    );
+    localStorage.setItem("cartItems", JSON.stringify(updatedCart));
   };
 
-  // Remove a specific item from cartItems and update localStorage accordingly
-  const removeItem = (_id: number) => {
+  const removeItem = (_id: string) => {
     const updatedCartItems = cartItems.filter((item) => item._id !== _id);
     setCartItems(updatedCartItems);
 
-    // Update localStorage: remove the item _id from stored cart items
-    const storedIds: number[] = JSON.parse(
-      localStorage.getItem("cartItems") || "[]"
-    );
-    const updatedIds = storedIds.filter((id) => id !== _id);
-    localStorage.setItem("cartItems", JSON.stringify(updatedIds));
+    const storedCart = JSON.parse(localStorage.getItem("cartItems") || "[]");
+    const updatedCart = storedCart.filter((item: { _id: string; quantity: number }) => item._id !== _id);
+    localStorage.setItem("cartItems", JSON.stringify(updatedCart));
 
-    if (updatedIds.length === 0) {
+    if (updatedCart.length === 0) {
       setShowEmptyModal(true);
     }
   };
@@ -113,10 +134,11 @@ const Cart = () => {
     setShowEmptyModal(true);
   };
 
-  // Handler for proceeding to checkout
+  // Handler for proceeding to checkout: store complete cart data in localStorage.
   const handleProceedToCheckout = () => {
     const total = calculateTotal();
     localStorage.setItem("totalAmount", total.toFixed(2));
+    localStorage.setItem("checkoutCartItems", JSON.stringify(cartItems));
     router.push("/checkout");
   };
 
@@ -185,7 +207,7 @@ const Cart = () => {
                       }
                       className="w-16 px-2 py-1 border rounded-md text-center"
                       min="1"
-                      max={item.stockLevel} // Limit to available stock level
+                      max={item.stockLevel}
                     />
                     <p className="font-bold text-[#1D3178] text-base">
                       ${(Number(item.price) * item.quantity).toFixed(2)}
@@ -224,7 +246,6 @@ const Cart = () => {
               <span>Subtotal:</span>
               <span>${calculateTotal().toFixed(2)}</span>
             </p>
-            {/* Shipping fees removed */}
             <p className="flex justify-between font-bold text-lg text-[#1D3178] mt-4">
               <span>Total:</span>
               <span>${calculateTotal().toFixed(2)}</span>

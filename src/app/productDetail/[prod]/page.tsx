@@ -2,7 +2,7 @@ import { client } from "@/sanity/lib/client";
 import { urlFor } from "@/sanity/lib/image";
 import ProductDetailsClient from "./ProductDetailsClient";
 
-type Product = {
+type Prod = {
   _id: string;
   name: string;
   price: number;
@@ -10,46 +10,43 @@ type Product = {
   tags: string[];
   imageUrl: string;
   description: string;
+  stockLevel: number;
 };
 
-export default async function Page({ params }: { params: { prod: string } }) {
-  // Fetch product data
-  const query = await client.fetch(`
-    *[_type == "product"]{
+export default async function Page({ params }: { params: { productDetails: string } }) {
+  // Fetch product data on the server with no caching.
+  const query = await client.fetch(
+    `*[_type == "product"]{
       _id,
       name,
       price,
       discountPercentage,
       tags,
       "imageUrl": image.asset->url,
-      description
-    }
-  `);
-
-  const product = query.find((item: Product) => item._id === params.prod);
+      description,
+      stockLevel
+    }`,
+    {},
+    { cache: 'no-store' }  // Force a fresh fetch on every request
+  );
+  
+  const product = query.find((item: Prod) => item._id == params.productDetails);
 
   if (!product) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <p className="text-2xl font-semibold text-red-600">Product not found.</p>
-      </div>
-    );
+    return <div>Product not found.</div>;
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 p-6 lg:p-12">
-      <section className="container mx-auto">
-        <ProductDetailsClient
-          product={{
-            id: product._id,
-            name: product.name,
-            price: product.price,
-            description: product.description,
-            imageUrl: urlFor(product.imageUrl).url(),
-          }}
-          relatedProducts={query} // Pass related products for recommendations
-        />
-      </section>
-    </main>
+    <ProductDetailsClient
+      product={{
+        id: product._id,
+        name: product.name,
+        price: product.price,
+        description: product.description,
+        stockLevel: product.stockLevel,
+        imageUrl: urlFor(product.imageUrl).url(),
+      }}
+      relatedProducts={query} // Pass relatedProducts as needed
+    />
   );
 }

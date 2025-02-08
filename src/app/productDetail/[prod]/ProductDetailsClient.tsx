@@ -10,45 +10,58 @@ type Product = {
   price: number;
   description: string;
   imageUrl: string;
+  stockLevel: number;
 };
+
 type Product1 = {
   _id: string;
   name: string;
   price: number;
   description: string;
   imageUrl: string;
+  stockLevel: number;
 };
 
-const ProductDetailsClient = ({
-  product,
-  relatedProducts,
-}: {
+interface ProductDetailsClientProps {
   product: Product;
   relatedProducts: Product1[];
+}
+
+const ProductDetailsClient: React.FC<ProductDetailsClientProps> = ({
+  product,
+  relatedProducts,
 }) => {
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [showCartPopup, setShowCartPopup] = useState(false);
   const [cartPopupMessage, setCartPopupMessage] = useState("");
 
-  // Add to Cart function with beautiful popup feedback
+  // Add to Cart: store an object { _id, quantity } in localStorage.
   const addToCart = (id: string) => {
-    // Check if user is signed in by verifying if "user" exists in local storage.
     const user = localStorage.getItem("user");
     if (!user) {
-      // If no user is found, show the sign in modal.
       setShowSignInModal(true);
       return;
     }
 
     try {
-      const existingCart = JSON.parse(localStorage.getItem("cartItems") || "[]");
-      if (!existingCart.includes(id)) {
-        existingCart.push(id);
-        localStorage.setItem("cartItems", JSON.stringify(existingCart));
+      // Retrieve the existing cart from localStorage (array of objects)
+      const existingCart: { _id: string; quantity: number }[] = JSON.parse(
+        localStorage.getItem("cartItems") || "[]"
+      );
+
+      // Check if the product already exists in the cart
+      const existingItem = existingCart.find((item) => item._id === id);
+
+      if (!existingItem) {
+        // Add new product with quantity 1
+        existingCart.push({ _id: id, quantity: 1 });
         setCartPopupMessage("Item added to cart!");
       } else {
-        setCartPopupMessage("Item already in the cart.");
+        // If item already exists, show a message without updating the quantity.
+        setCartPopupMessage("Item already exists in the cart.");
       }
+
+      localStorage.setItem("cartItems", JSON.stringify(existingCart));
       setShowCartPopup(true);
     } catch (error) {
       console.error("Failed to add item to cart:", error);
@@ -127,11 +140,17 @@ const ProductDetailsClient = ({
           <p className="text-lg sm:text-xl font-semibold text-[#151875]">
             Price: ${product.price}
           </p>
+          {/* If product stock is 0, disable the button and update styling/text */}
           <button
-            className="px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white text-sm sm:text-lg rounded-lg hover:bg-blue-700 transition duration-300"
+            disabled={product.stockLevel === 0}
             onClick={() => addToCart(product.id)}
+            className={`px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition duration-300 ${
+              product.stockLevel === 0
+                ? "bg-amber-400 text-white cursor-not-allowed"
+                : "bg-blue-600 text-white hover:bg-blue-700"
+            }`}
           >
-            Add to Cart
+            {product.stockLevel === 0 ? "Out of Stock" : "Add to Cart"}
           </button>
         </div>
       </div>

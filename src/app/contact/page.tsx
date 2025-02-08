@@ -1,4 +1,5 @@
 "use client";
+import { client } from '@/sanity/lib/client';
 import React, { useEffect, useState } from 'react';
 
 const ContactPage = () => {
@@ -63,6 +64,17 @@ const ContactPage = () => {
     return !Object.values(errors).some((error) => error !== '');
   };
 
+  // Updated sendDataToSanity to include current time explicitly.
+  const sendDataToSanity = async () => {
+    await client.create({
+      _type: "message",
+      name: formData.name,
+      email: formData.email,
+      message: formData.message,
+      createdAt: new Date().toISOString(), // explicitly sending current time
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -75,7 +87,9 @@ const ContactPage = () => {
     if (validateForm()) {
       // Here you can handle the API call or any other submission logic.
       // Instead of an alert, we'll show the modal popup.
+      sendDataToSanity();
       setShowModal(true);
+      
       // Optionally, you can clear the form after submission:
       setFormData({ name: '', email: '', message: '' });
     }

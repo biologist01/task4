@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   CardNumberElement,
   CardExpiryElement,
@@ -11,8 +11,8 @@ import {
 } from "@stripe/react-stripe-js";
 import { client } from "@/sanity/lib/client";
 
-// Simple function to convert dollars to cents.
-const convertToSubcurrency = (amount: number): number => Math.round(amount * 100);
+const convertToSubcurrency = (amount: number): number =>
+  Math.round(amount * 100);
 
 interface FormData {
   fullName: string;
@@ -38,7 +38,11 @@ interface OrderData {
   paymentStatus: "paid" | "cash on delivery";
   amount: number;
   createdAt: string;
-  cartItems: number[];
+  status: "pending";
+  cartItems: {
+    product: { _ref: string; _type: "reference" };
+    quantity: number;
+  }[];
 }
 
 const CheckoutForm = () => {
@@ -85,7 +89,6 @@ const CheckoutForm = () => {
     }
   }, []);
 
-  // Validate form fields.
   useEffect(() => {
     const valid =
       formData.fullName.trim() !== "" &&
@@ -105,7 +108,6 @@ const CheckoutForm = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // When Credit Card is selected, fetch PaymentIntent clientSecret.
   useEffect(() => {
     if (formData.paymentMethod === "creditCard") {
       const amount = localStorage.getItem("totalAmount");
@@ -136,22 +138,21 @@ const CheckoutForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true); // Disable button and show loading immediately.
     setErrorMessage("");
     if (!isFormValid) {
       alert("Please fill in all required fields.");
+      setLoading(false);
       return;
     }
-
-    // Retrieve the amount from localStorage.
     const amountStored = localStorage.getItem("totalAmount");
     const amountValue = amountStored ? Number(amountStored) : 0;
-
-    // Retrieve cart items from localStorage (assumed to be stored as a JSON array of numbers).
-    const cartItemsString = localStorage.getItem("cartItems");
-    const cartItems: number[] = cartItemsString ? JSON.parse(cartItemsString) : [];
+    // Retrieve cart items from localStorage as objects with _id and quantity.
+    const storedCartItems = JSON.parse(
+      localStorage.getItem("checkoutCartItems") || "[]"
+    ) as { _id: string; quantity: number }[];
 
     if (formData.paymentMethod === "cash") {
-      // For Cash on Delivery, build order data with paymentStatus "cash on delivery".
       const orderData: OrderData = {
         _type: "order",
         fullName: formData.fullName,
@@ -165,17 +166,29 @@ const CheckoutForm = () => {
         paymentStatus: "cash on delivery",
         amount: amountValue,
         createdAt: new Date().toISOString(),
-        cartItems: cartItems,
+        status: "pending",
+        cartItems: storedCartItems.map((item) => ({
+          product: { _ref: item._id, _type: "reference" },
+          quantity: item.quantity,
+        })),
       };
 
-      await submitOrderToSanity(orderData);
-      alert("Order Placed Successfully! (Cash on Delivery)");
-      router.push("/ordercompleted");
+      try {
+        await submitOrderToSanity(orderData);
+        for (const item of storedCartItems) {
+          await client.patch(item._id).dec({ stockLevel: item.quantity }).commit();
+        }
+        alert("Order Placed Successfully! (Cash on Delivery)");
+        router.push("/ordercompleted");
+      } catch (error) {
+        console.error("Error placing cash order:", error);
+        setErrorMessage("Failed to place order. Please try again.");
+      }
+      setLoading(false);
       return;
     }
 
     if (formData.paymentMethod === "creditCard") {
-      setLoading(true);
       if (!stripe || !elements) {
         setErrorMessage("Stripe is not loaded yet.");
         setLoading(false);
@@ -189,37 +202,35 @@ const CheckoutForm = () => {
         return;
       }
 
-      // Create PaymentMethod using Stripe.
-      const { error: pmError, paymentMethod } = await stripe.createPaymentMethod({
-        type: "card",
-        card: cardNumberElement,
-        billing_details: {
-          name: formData.fullName,
-          email: formData.email,
-          phone: formData.phone,
-          address: {
-            line1: formData.address,
-            city: formData.city,
-            postal_code: formData.postalCode,
-            country: formData.country,
+      const { error: pmError, paymentMethod: stripePaymentMethod } =
+        await stripe.createPaymentMethod({
+          type: "card",
+          card: cardNumberElement,
+          billing_details: {
+            name: formData.fullName,
+            email: formData.email,
+            phone: formData.phone,
+            address: {
+              line1: formData.address,
+              city: formData.city,
+              postal_code: formData.postalCode,
+              country: formData.country,
+            },
           },
-        },
-      });
+        });
 
-      if (pmError || !paymentMethod) {
+      if (pmError || !stripePaymentMethod) {
         setErrorMessage(pmError?.message || "Failed to create payment method.");
         setLoading(false);
         return;
       }
 
-      // Build return URL.
       const proto = window.location.protocol;
       const host = window.location.host;
       const returnUrl = `${proto}//${host}/ordercompleted`;
 
-      // Confirm PaymentIntent.
       const { error: confirmError } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: paymentMethod.id,
+        payment_method: stripePaymentMethod.id,
         return_url: returnUrl,
       });
 
@@ -229,7 +240,6 @@ const CheckoutForm = () => {
         return;
       }
 
-      // After successful payment, build order data with paymentStatus "paid".
       const orderData: OrderData = {
         _type: "order",
         fullName: formData.fullName,
@@ -243,11 +253,23 @@ const CheckoutForm = () => {
         paymentStatus: "paid",
         amount: amountValue,
         createdAt: new Date().toISOString(),
-        cartItems: cartItems,
+        status: "pending",
+        cartItems: storedCartItems.map((item) => ({
+          product: { _ref: item._id, _type: "reference" },
+          quantity: item.quantity,
+        })),
       };
 
-      await submitOrderToSanity(orderData);
-      // Stripe will automatically redirect on success.
+      try {
+        await submitOrderToSanity(orderData);
+        for (const item of storedCartItems) {
+          await client.patch(item._id).dec({ stockLevel: item.quantity }).commit();
+        }
+        router.push("/ordercompleted");
+      } catch (error) {
+        console.error("Error placing credit card order:", error);
+        setErrorMessage("Failed to place order. Please try again.");
+      }
       setLoading(false);
     }
   };
